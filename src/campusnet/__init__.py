@@ -4,6 +4,7 @@ from typing import Union, List
 from dataclasses import dataclass
 import requests
 from bs4 import BeautifulSoup
+import datetime
 
 VERSION = "0.4"
 
@@ -29,6 +30,12 @@ class Exam:
     semester: str
     description: str
     grade: Union[float, None] = None
+
+
+@dataclass
+class Document:
+    name: str
+    date_time: datetime.datetime | None
 
 
 class CampusNetSession:
@@ -233,3 +240,24 @@ class CampusNetSession:
                     )
                 )
         return exams
+
+    def get_documents(self) -> list[Document]:
+        response = self.session.get(self.create_url("CREATEDOCUMENT"))
+        response.encoding = "utf-8"
+        soup = BeautifulSoup(response.text, "html.parser")
+        table = soup.find("table", {"class": "tb"})
+        documents: list[Document] = []
+        for row in table.find_all("tr")[1:]:
+            cells = row.find_all("td")
+            name: str = cells[0].text
+
+            try:
+                date_time = datetime.datetime.strptime(
+                    f"{cells[1].text} {cells[2].text}", "%d.%m.%y %H:%M"
+                )
+            except ValueError:
+                date_time = None
+
+            documents.append(Document(name=name, date_time=date_time))
+
+        return documents
