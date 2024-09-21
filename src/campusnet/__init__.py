@@ -119,11 +119,7 @@ class CampusNetSession:
         :return: A list of semesters.
         """
         response = self.session.get(self.create_url("COURSERESULTS"))
-        # The webservice doesn't correctly set Content-Type: text/html; charset=utf-8
-        # so requests uses ISO-8859-1 which is not correct. Requests is smart enough to
-        # convert the response to UTF-8 if we tell it to take a guess at the real encoding.
-        # also see https://stackoverflow.com/a/52615216
-        response.encoding = response.apparent_encoding
+        response.encoding = "ISO-8859-1"
         soup = BeautifulSoup(response.text, "html.parser")
         semesters = {}
         for semester in soup.find_all("option"):
@@ -159,22 +155,18 @@ class CampusNetSession:
                     "menuno": "000307",
                 },
             )
-            # The webservice doesn't correctly set Content-Type: text/html; charset=utf-8
-            # so requests uses ISO-8859-1 which is not correct. Requests is smart enough to
-            # convert the response to UTF-8 if we tell it to take a guess at the real encoding.
-            # also see https://stackoverflow.com/a/52615216
-            response.encoding = response.apparent_encoding
+            response.encoding = "utf-8"
             soup = BeautifulSoup(response.text, "html.parser")
             table = soup.find("table", {"class": "nb list"})
             for row in table.find_all("tr")[1:]:
                 cells = row.find_all("td")
-                if len(cells) == 7:
+                if len(cells) == 6:
                     try:
                         grade = float(cells[2].text.strip().replace(",", "."))
                     except ValueError:
                         grade = None
                     # getting id for this module
-                    exams_button = cells[5].find("a")
+                    exams_button = cells[4].find("a")
                     exams_id = exams_button.get("href").split(",-N")[-2]
                     num = cells[0].text.strip()
                     if not any(module.num == num for module in modules):
@@ -182,8 +174,9 @@ class CampusNetSession:
                             Module(
                                 num=num,
                                 name=cells[1].text.strip(),
-                                credits=float(cells[3].text.strip().replace(",", ".")),
-                                status=cells[4].text.strip(),
+                                #credits=float(cells[3].text.strip().replace(",", ".")),
+                                credits=0,
+                                status=cells[3].text.strip(),
                                 semesters=[semester],
                                 id=exams_id,
                                 grade=grade,
@@ -216,11 +209,7 @@ class CampusNetSession:
         :return: A list of exams.
         """
         response = self.session.get(self.create_url("RESULTDETAILS", f",-N{module.id}"))
-        # The webservice doesn't correctly set Content-Type: text/html; charset=utf-8
-        # so requests uses ISO-8859-1 which is not correct. Requests is smart enough to
-        # convert the response to UTF-8 if we tell it to take a guess at the real encoding.
-        # also see https://stackoverflow.com/a/52615216
-        response.encoding = response.apparent_encoding
+        response.encoding = "utf-8"
         soup = BeautifulSoup(response.text, "html.parser")
         exam_table = soup.find("table", {"class": "tb"})
         exams = []

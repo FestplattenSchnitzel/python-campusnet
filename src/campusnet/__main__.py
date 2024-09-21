@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 def main():
     parser = ArgumentParser(
-        prog="python -m campusnet", description="Get exams from CampusNet instance."
+        prog="campusnet", description="Get exams from CampusNet instance."
     )
     parser.add_argument("username", help="Username (including domain)")
     parser.add_argument(
