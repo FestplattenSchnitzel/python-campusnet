@@ -29,6 +29,7 @@ class Exam:
     name: Union[str, None]
     semester: str
     description: str
+    id: str | None
     grade: Union[float, None] = None
 
 
@@ -231,12 +232,19 @@ class CampusNetSession:
                     grade = float(cells[3].text.strip().replace(",", "."))
                 except ValueError:
                     grade = None
+                try:
+                    _id: str = re.match(
+                        r".*-AEXEV,-N(\d+).*'\);", cells[5].find("a", href=True)["href"]
+                    ).group(1)
+                except TypeError:
+                    _id = None
                 exams.append(
                     Exam(
                         name=current_heading,
                         semester=cells[0].text.strip(),
                         description=cells[1].text.strip(),
                         grade=grade,
+                        id=_id,
                     )
                 )
         return exams
@@ -261,3 +269,26 @@ class CampusNetSession:
             documents.append(Document(name=name, date_time=date_time))
 
         return documents
+
+    def get_gradeoverview_for_exam(self, exam: Exam) -> dict[str, int]:
+        response = self.session.get(self.create_url("GRADEOVERVIEW", f",-AEXEV,-N{exam.id}"))
+        response.encoding = "utf-8"
+        soup = BeautifulSoup(response.text, "html.parser")
+        table = soup.find("table")
+        gradeoverview: dict[str, int] = {}
+
+        if not table:
+            print(f'No table found for "{exam.description}" ({exam.id}).')
+            return None
+        for row in table.find_all("tr")[1:]:
+            cells = row.find_all("td")
+            grade: str = cells[0].text
+            amount: int
+            try:
+                amount = int(cells[1].text)
+            except ValueError:
+                amount = 0
+
+            gradeoverview.update({cells[0].text: amount})
+
+        return gradeoverview
