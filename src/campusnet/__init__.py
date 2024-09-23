@@ -181,7 +181,7 @@ class CampusNetSession:
                             Module(
                                 num=num,
                                 name=cells[1].text.strip(),
-                                #credits=float(cells[3].text.strip().replace(",", ".")),
+                                # credits=float(cells[3].text.strip().replace(",", ".")),
                                 credits=0,
                                 status=cells[3].text.strip(),
                                 semesters=[semester],
